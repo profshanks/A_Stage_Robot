@@ -7,6 +7,7 @@
 #  Useful:              #
 #                       #
 #########################
+# Useless comment
 
 import time
 import sys
