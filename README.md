@@ -1,9 +1,3 @@
 # A_Stage_Robot
-Code developed in support of an automous stage-platform system that I am developing.
+Code developed in support of an automous stage-platform system that I am developing with the help of five plucky undergraduates and two collegial CS profs.
 
-
-I also like monkeys!
-
-I like monkeys too!!!
-
-More monkeys!
