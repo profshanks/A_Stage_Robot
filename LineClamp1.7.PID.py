@@ -1,6 +1,6 @@
 #########################
 #                       #
-#    Line Clamp 1.6     #
+#    Line Clamp 1.7     #
 #      profshanks       #
 #  Started: 08.04.2018  #
 #  This Version: 11/12  #
@@ -194,6 +194,7 @@ def calibrateSensors(color='clear'):
             print("Calibration sequence failed. Line center not found. Program ending... :(")
             sys.exit()
 '''
+
 def driveForward(hiVals, loVals, topSpeed, color='clear'):
     """ Drive forward while "clamped" to the tape line. Runs until stop
         signal is encountered.
@@ -210,19 +211,18 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
         c = 2
     else:
         c = 3
-    variance = 5
-    #variance = loVals[c] - loVals[c+8]
-    kp = 1.2
-    ki = 0
-    kd = 0
-    sumOfErr = 0
-    lastErr = 0
+        
+    kp = .1
+    ki = .0001
+    kd = .2
+    integral = 0
+    differential = 0
     start = time.time()
     data = getSensorData()
     end = time.time()
     elapsed = round((end-start), 5)
     print('That function took ' + str(elapsed) + ' seconds!')
-    eTotal =  elapsed
+    eTotal = elapsed
     print(data[c+12], data[c+8], data[c+4], data[c])
     total = (data[c] + data[c+4] + data[c+8] + data[c+12])
     i = 1
@@ -235,8 +235,9 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
             print('I am lost...')
             print(data[c+12], data[c+8], data[c+4], data[c])
             break
-        elif data[c] > (data[c+4]*2): # Too far right; make a hard left!
-            print('Hard left!')
+        elif data[c] > (data[c+4]*2): # Too far left; make a hard right!
+            print('Hard right!')
+            integral = 0
             print(data[c+12], data[c+8], data[c+4], data[c])
             #print(i)
             while data[c+4] < (hiVals * .8):
@@ -255,8 +256,9 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
                     break
                 i += 1
             #print(i)
-        elif data[c+12] > (data[c+8]*2): # Too far left; make a hard right!
-            print('Hard right!')
+        elif data[c+12] > (data[c+8]*2): # Too far right; make a hard left!
+            print('Hard left!')
+            integral = 0
             print(data[c+12], data[c+8], data[c+4], data[c])
             #print(i)
             while data[c+8] < (hiVals * .8):
@@ -276,33 +278,40 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
                 i += 1
             #print(i)
         else:
+            #error = ((3*data[c]) + data[c+4]) - (data[c+8] + (3*data[12]))
             error = data[c+4] - data[c+8]
-            #print('Error: ' + str(error))
-            proportion = abs(error/hiV) * kp
-            #print('Proportion: ' + str(proportion))
-            turn = topSpeed-proportion
-            if turn < 0:
-                turn = 0
-            elif turn > 255:
-                turn=255
-            #print('Turn: ' + str(turn))
-          
-            if error > 0: # A little too far right; proportional turn left
-                #print('Left...')
+            proportional = error/hiV
+            correction = abs(kp*proportional + ki*integral + kd*differential)
+            turn = topSpeed - correction
+            if turn < 60:
+                turn = 60
+                
+            print('Correction: ' + str(correction) +
+                  ' / E: ' + str(error) +
+                  ' / P: ' + str(proportional) +
+                  ' / I: ' + str(integral) +
+                  ' / D: ' + str(differential)
+                  ' / T: ' + str(turn))
+            
+            integral += error
+            differential = error
+            
+            if error > 0: # A little too far right; PID turn left
+                print('Left...')
                 pi.set_PWM_dutycycle(M2Sp, turn)
                 pi.set_PWM_dutycycle(M1Sp, topSpeed)
-            else: # A little too far left; proportional turn right
-                #print('Right...')
+            else: # A little too far left; PID turn right
+                print('Right...')
                 pi.set_PWM_dutycycle(M2Sp, topSpeed)
                 pi.set_PWM_dutycycle(M1Sp, turn)
-                
-                
+            
         start = time.time()
         data = getSensorData()
         end = time.time()
         elapsed = round((end-start), 5)
         eTotal += elapsed
-        print('That function took ' + str(elapsed) + ' seconds!')
+        #print('That function took ' + str(elapsed) + ' seconds!')
+        print(data[c+12], data[c+8], data[c+4], data[c])
         
         total = (data[c] + data[c+4] + data[c+8] + data[c+12])
         #print(total)
@@ -319,34 +328,7 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
     eAverage = round((eTotal/i), 5)
     print('The average time to read the sensors was ' + str(eAverage) + ' seconds.')
     
-    return eTotal                 
-    '''
-    while data[4] < (data[6]*1.5): # Looking out for red tape signal
-        # Calculate centering error & turn correction via PID method.
-        
-        error = abs(data[c] - data[c+8])
-        proportional = error * kp
-        integral = sumOfErr * ki
-        differential = lastErr * kd
-        pid = int(proportional + differential)              # Just PD control
-        #pid = int(proportional + integral + differential)   # Full PID
-        sumOfErr += error
-        error = lastErr
-        turn = topSpeed - pid
-        if turn <= 0:
-            turn = 0
-
-        # Make speed adjustments.
-        if data[c] > data[c+8]: # Need to adjust left.
-            pi.set_PWM_dutycycle(M1Sp, topSpeed)
-            pi.set_PWM_dutycycle(M2Sp, turn)
-        else:
-            pi.set_PWM_dutycycle(M1Sp, turn)
-            pi.set_PWM_dutycycle(M2Sp, topSpeed)
-            
-        data = getSensorData()
-    '''
-    
+    return eTotal               
 
     
 ################
@@ -354,7 +336,7 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
 ################
 
 topSpeed = 180  # Speed values range from 0-255.
-hiV = 250
+hiV = 1024
 col = 'clear'   # Color options include 'red'/'green'/'blue'/'clear'.
 c = 3
 
