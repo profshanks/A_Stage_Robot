@@ -212,9 +212,9 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
     else:
         c = 3
         
-    kp = .1
-    ki = 0.0001
-    kd = .1
+    kp = .2
+    ki = 0
+    kd = 0
     integral = 0
     derivative = 0
     lastError = 0
@@ -282,8 +282,8 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
             #print(i)
         else:
             print(data[c+12], data[c+8], data[c+4], data[c])
-            error = ((3*data[c+12]) + data[c+8]) - (data[c+4] + (3*data[c]))
-            #error = data[c+4] - data[c+8]
+            #error = ((3*data[c+12]) + data[c+8]) - (data[c+4] + (3*data[c]))
+            error = data[c] - data[c+8]
             proportional = error
             derivative = error - lastError
             correction = abs(kp*proportional + ki*integral + kd*derivative)
