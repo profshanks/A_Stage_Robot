@@ -1,0 +1,24 @@
+From SourceForge: https://stackoverflow.com/questions/10032461/git-keeps-asking-me-for-my-ssh-key-passphrase
+
+Git keeps asking me for my ssh key passphrase
+Ask Question
+416
+
+I'm using Linux and I created keys as instructed in the github tutorial, registered them with github, and tried using ssh-agent explicitly — yet git continues to ask me for my passphrase every time I try to do a pull or a push.
+
+SOLUTION:
+
+From git bash, enter:
+
+eval $(ssh-agent)
+
+ssh-add
+
+    This will ask you your passphrase just once, and then you should be allowed to push, provided that you uploaded the public key to Github.
+
+    To save key permanently:
+
+ssh-add -k 
+
+    This will persist it after you close and re-open it by storing it in user's keychain.
+
