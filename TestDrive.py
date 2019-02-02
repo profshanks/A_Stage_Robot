@@ -358,13 +358,93 @@ hiV = 250
 col = 'clear'   # Color options include 'red'/'green'/'blue'/'clear'.
 c = 3
 
-pi.set_PWM_dutycycle(M1Sp, topSpeed)
-pi.set_PWM_dutycycle(M2Sp, topSpeed)
-
+pi.set_PWM_dutycycle(M1Sp, 50)
+pi.set_PWM_dutycycle(M2Sp, 50) #move forward for 1s at 50 speed
 time.sleep(1)
+
+pi.write(M1Dir, 0)
+pi.write(M2Dir, 1)  #change direction to left
+time.sleep(0.5)
+
+pi.write(M2Dir, 0) #reset direction?
+
+pi.set_PWM_dutycycle(M1Sp, 50) 
+pi.set_PWM_dutycycle(M2Sp, 50) #move forward for 5s at 50 speed
+time.sleep(4.5)
+
+pi.write(M1Dir, 1)        #change direction to right 3 times
+pi.write(M2Dir, 0)
+time.sleep(0.5)
+
+pi.write(M1Dir, 0)
+
+pi.write(M1Dir, 1)
+pi.write(M2Dir, 0)
+time.sleep(0.5)
+
+pi.write(M1Dir, 0)
+
+pi.write(M1Dir, 1)
+pi.write(M2Dir, 0)
+time.sleep(0.5)
+
+pi.write(M1Dir, 0)
+
+pi.set_PWM_dutycycle(M1Sp, 50)
+pi.set_PWM_dutycycle(M2Sp, 50)
+time.sleep(7)
+
+pi.write(M1Dir, 0)  #change direction to left again
+pi.write(M2Dir, 1)
+time.sleep(0.5)
+
+pi.write(M2Dir, 0)
+
+pi.write(M1Dir, 0)
+pi.write(M2Dir, 1)
+time.sleep(0.5)
+
+pi.write(M2Dir, 0)
+
+pi.write(M1Dir, 0)
+pi.write(M2Dir, 1)
+time.sleep(0.5)
+
+pi.write(M2Dir, 0)
+
+pi.set_PWM_dutycycle(M1Sp, 50)
+pi.set_PWM_dutycycle(M2Sp, 50)
+time.sleep(4)
+
+pi.write(M1Dir, 1)
+pi.write(M2Dir, 0)  #change direction to right
+time.sleep(0.5)
+
+pi.write(M1Dir, 0)
+
+pi.write(M1Dir, 1)
+pi.write(M2Dir, 0)  #change direction to right
+time.sleep(0.5)
+
+pi.write(M1Dir, 0)
+
+pi.set_PWM_dutycycle(M1Sp, 50)
+pi.set_PWM_dutycycle(M2Sp, 50)
+time.sleep(3)
 
 pi.set_PWM_dutycycle(M1Sp, 0)
 pi.set_PWM_dutycycle(M2Sp, 0)
+
+pi.write(M1Dir, 1)
+pi.write(M2Dir, 0)  #change direction to right
+
+pi.set_PWM_dutycycle(M1Sp, 0)
+pi.set_PWM_dutycycle(M2Sp, 50) #victory dance for 3s
+time.sleep(3)
+
+pi.set_PWM_dutycycle(M1Sp, 0)
+pi.set_PWM_dutycycle(M2Sp, 0) #end of sequence
+
 
 #(hiV,loV,tests) = calibrateSensors(color=col)
 #print(tests)
