@@ -439,8 +439,8 @@ pi.write(M1Dir, 1)
 pi.write(M2Dir, 0)  #change direction to right
 
 pi.set_PWM_dutycycle(M1Sp, 0)
-pi.set_PWM_dutycycle(M2Sp, 50) #victory dance for 3s
-time.sleep(3)
+pi.set_PWM_dutycycle(M2Sp, 50) #victory dance
+time.sleep(11)
 
 pi.set_PWM_dutycycle(M1Sp, 0)
 pi.set_PWM_dutycycle(M2Sp, 0) #end of sequence
