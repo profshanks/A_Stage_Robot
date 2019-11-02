@@ -200,8 +200,8 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
         """
     iSawRed = False
     eTotal = 0
-    pi.write(M1Dir, 1)
-    pi.write(M2Dir, 1)
+    pi.write(M1Dir, 0)
+    pi.write(M2Dir, 0)
     if color == 'red':
         c = 0
     elif color == 'green':

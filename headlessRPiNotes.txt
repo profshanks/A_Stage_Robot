@@ -1,0 +1,202 @@
+
+HOW TO SET UP RPi FOR HEADLESS ON A SIMPLE/HOME NETWORK...
+
+-After flashing the OS onto the SD card, navigate into the 'boot' folder, 
+and add two new text files:
+
+	-ssh  (add a new text doc; change the name to "ssh" with no file extension
+	-wpa_supplicant.conf  (don't forget to change the extension to .conf)
+
+
+-This is the bit to include in the wpa_supplicant.conf file:
+
+country=US
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+network={
+	ssid="Actress"
+	psk="inventor"
+	key_mgmt=WPA-PSK
+}
+
+
+-I think when this boots for the first time in the RPi, it notices the two files 
+that were created and then uses those as signals to make changes to the normal 
+configuration files.
+
+-After you boot the RPi once, if you pull the card and jam it back in a card-reader 
+on a laptop, you will notice that the 'ssh' and 'wpa_supplicant.conf' files are now 
+gone. It would seem that after those files are used as previously described, the RPi
+then tidys-up. It would be interesting to run some tests to see if the changes that
+are made by those files are permanent, or if the RPi reverts to its non-headless config.
+It would also be interesting to see if you can make changes to the 'wpa_supplicant' 
+configuration by creating a new file with different parameters... (insert thoughtful 
+emoticon here).
+
+-You SHOULDN'T (should being the least-useful word in the English language...)
+need to know the IP address of the RPi. It SHOULD boot with 'raspberrypi' as the 
+host name by which it is identified by the network. So even if the router assigns
+the RPi a random IP address dynamically, you SHOULD be able to talk to the RPi by
+simply referring to it as either 'raspberrypi' or 'raspberrypi.local'. That said, half the
+time neither of these worked, and I had to SSH in using "pi@192.168.2.13" I pulled the 
+correct IP address by accessing the admin controls for my home rounter. Not a viable 
+solution in the 'eduroam' world...
+
+-After I successfully managed to ssh-in to the headless Pi, I used 'raspi-config'
+to ensure that ssh had been activated. I also changed the netowrk hostname to 'headlessRPi'
+so that I can make sure I know who I'm talking to. Leaving the hostname as 'raspberrypi'
+can get confusing because the router seems to create a profile for each new device,
+and when I start over and re-flash the basic disk-image, it is like you are creating yet
+another new device. I also changed the password to 'headless' These changes also helps 
+to avoid the issue of thinking you are ssh-ing in to one RPi device, when you are in fact
+dialing into a different one (Sam and Aaron had a good time watching the WRONG computer
+dutifully run its shutdown sequence as commanded...)
+
+
+
+
+HOW TO SET UP RPi FOR HEADLESS ON A WPA2-ENTERPRISE NETWORK (AKA-eduroam)...
+
+-Same basic approah at the start...
+
+-After flashing the OS onto the SD card, navigate into the 'boot' folder, 
+and add two new text files:
+
+	-ssh  (add a new text doc; change the name to "ssh" with no file extension
+	-wpa_supplicant.conf  (don't forget to change the extension to .conf)
+
+
+-This is the bit to include in the wpa_supplicant.conf file (a bit different from above):
+
+country=US
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+network={
+	ssid="eduroam"
+	# psk="aVeryStrongPassword"
+	key_mgmt=WPA-EAP
+	eap=PEAP
+	identity="sshanks@d.umn.edu"
+	password="MyVeryStrongPassword6"
+}
+
+
+SET UP THE PI TO EMAIL YOU ITS IP ADDRESS:
+
+Create the Python Script
+Copy and paste the following code into a text editor (I'm a Vim man myself (fun with Nano?).
+
+'''
+__author__ = 'Cody Giles'
+__license__ = "Creative Commons Attribution-ShareAlike 3.0 Unported License"
+__version__ = "1.0"
+__maintainer__ = "Cody Giles"
+__status__ = "Production"
+'''
+import subprocess
+import smtplib
+from email.mime.text import MIMEText
+import datetime
+
+def connect_type(word_list):
+    """ This function takes a list of words, then, depeding which key word, returns the corresponding
+    internet connection type as a string. ie) 'ethernet'.
+    """
+    if 'wlan0' in word_list or 'wlan1' in word_list:
+        con_type = 'wifi'
+    elif 'eth0' in word_list:
+        con_type = 'ethernet'
+    else:
+        con_type = 'current'
+
+    return con_type
+
+# Change to your own account information
+# Account Information
+to = 'sshanks@d.umn.edu' # Email to send to.
+gmail_user = 'sshanks@d.umn.edu' # Email to send from. (MUST BE GMAIL)
+gmail_password = 'Pythonisthebest!' # Gmail password.
+smtpserver = smtplib.SMTP('smtp.gmail.com', 587) # Server to use.
+
+smtpserver.ehlo()  # Says 'hello' to the server
+smtpserver.starttls()  # Start TLS encryption
+smtpserver.ehlo()
+smtpserver.login(gmail_user, gmail_password)  # Log in to server
+today = datetime.date.today()  # Get current time/date
+
+arg='ip route list'  # Linux command to retrieve ip addresses.
+# Runs 'arg' in a 'hidden terminal'.
+p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
+data = p.communicate()  # Get data from 'p terminal'.
+print(data)
+# Split IP text block into three, and divide the two containing IPs into words.
+ip_lines = data[0].splitlines()
+split_line_a = ip_lines[1].split()
+#split_line_b = ip_lines[2].split()
+
+# con_type variables for the message text. ex) 'ethernet', 'wifi', etc.
+ip_type_a = connect_type(split_line_a)
+#ip_type_b = connect_type(split_line_b)
+
+"""Because the text 'src' is always followed by an ip address,
+we can use the 'index' function to find 'src' and add one to
+get the index position of our ip.
+"""
+ipaddr_a = split_line_a[split_line_a.index('src')+1]
+#ipaddr_b = split_line_b[split_line_b.index('src')+1]
+
+# Creates a sentence for each ip address.
+my_ip_a = 'The %s IP for your RaspberryPi is %s' % (ip_type_a, ipaddr_a)
+#my_ip_b = 'Your %s ip is %s' % (ip_type_b, ipaddr_b)
+
+# Creates the text, subject, 'from', and 'to' of the message.
+#msg = MIMEText(my_ip_a + "\n" + my_ip_b)
+msg = MIMEText(my_ip_a)
+msg['Subject'] = 'IPs For RaspberryPi on %s' % today.strftime('%b %d %Y')
+msg['From'] = gmail_user
+msg['To'] = to
+# Sends the message
+smtpserver.sendmail(gmail_user, [to], msg.as_string())
+# Closes the smtp server.
+smtpserver.quit()
+
+
+
+
+
+
+
+Save this script using a nice name like 'startup_mailer.py' and make note of its path (like /home/pi/Code/startup_mailer.py)
+
+For good measure, make the script executable
+
+sudo chmod +x startup_mailer.py
+
+
+Not you need to edit /etc/rc.local as follows:
+
+ sudo nano /etc/rc.local
+
+Add the 'python /home/pi/Code/startup_mailer.py' line, so the file now looks like this:
+
+ # rc.local
+ #
+ # This script is executed at the end of each multiuser runlevel.
+ # Make sure that the script will "exit 0" on success or any other
+ # value on error.
+ #
+ # In order to enable or disable this script just change the execution
+ # bits.
+ #
+ # By default this script does nothing.
+ # Print the IP address if it doesn't work ad sleep 30 before all your code 
+ _IP=$(hostname -I) || true
+ if [ "$_IP" ]; then
+   printf "My IP address is %s\n" "$_IP"
+   python /home/pi/Code/startup_mailer.py     <<<------------------------------------------ ADD THIS LINE!!!
+ fi
+ exit 0
+
+FINISHED!
+Reboot your Pi and you should receive an email with your ip address.

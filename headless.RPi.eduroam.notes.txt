@@ -1,0 +1,205 @@
+How to set up an RPi for "Headless" operation on the UMD 'eduroam' network:
+
+-After flashing the OS onto the SD card, navigate into the 'boot' folder, 
+and add two new text files:
+
+	-ssh  (add a new text doc; change the name to "ssh" with no file extension
+	-wpa_supplicant.conf  (don't forget to change the extension to .conf)
+
+
+-This is the bit to include in the wpa_supplicant.conf file:
+
+country=US
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+network={
+	ssid="Actress"
+	psk="inventor"
+	key_mgmt=WPA-PSK
+}
+
+
+-Now you want to go start up Hedy (Sam's Hedy). You just need her for her non-eduroam 
+Hot-Spot capabilities. 
+
+-Once Hedy had booted, boot your new RPi
+
+-Now switch your laptop to Hedy's wifi hotspot: 'Actress'
+
+-Once you are on 'Actress,' open a browser and go to '10.3.141.1' This will take you to 
+the config page for the Hot-Spot (UN-Lenaea, PW-Lysistrata)
+
+-Click on 'Configure DHCP Server' then the 'Client List' tab. You are looking for the IP
+address that goes with the Host name 'raspberrypi'
+
+-You should now be able to open Putty/Terminal and SSH into your RPi using 'pi@IPaddress'
+The password should be 'raspberry'
+
+-Once you are in, you want to add a new folder to your home drive and navigate into that
+folder:
+ 
+	mkdir Code
+	cd Code
+
+-Then you want to create a Python script called 'startup_mailer.py' So open Nano (sudo nano)
+and copy in the following code:
+
+
+
+'''
+__author__ = 'Cody Giles'
+__license__ = "Creative Commons Attribution-ShareAlike 3.0 Unported License"
+__version__ = "1.0"
+__maintainer__ = "Cody Giles"
+__status__ = "Production"
+'''
+import subprocess
+import smtplib
+from email.mime.text import MIMEText
+import datetime
+
+def connect_type(word_list):
+    """ This function takes a list of words, then, depeding which key word, returns the corresponding
+    internet connection type as a string. ie) 'ethernet'.
+    """
+    if 'wlan0' in word_list or 'wlan1' in word_list:
+        con_type = 'wifi'
+    elif 'eth0' in word_list:
+        con_type = 'ethernet'
+    else:
+        con_type = 'current'
+
+    return con_type
+
+# Change to your own account information
+# Account Information
+to = 'yourEmail@d.umn.edu' # Email to send to.
+gmail_user = 'yourEmail@d.umn.edu' # Email to send from. (MUST BE GMAIL)
+gmail_password = 'YourStrongPassword42' # Gmail password.
+smtpserver = smtplib.SMTP('smtp.gmail.com', 587) # Server to use.
+
+smtpserver.ehlo()  # Says 'hello' to the server
+smtpserver.starttls()  # Start TLS encryption
+smtpserver.ehlo()
+smtpserver.login(gmail_user, gmail_password)  # Log in to server
+today = datetime.date.today()  # Get current time/date
+
+arg='ip route list'  # Linux command to retrieve ip addresses.
+# Runs 'arg' in a 'hidden terminal'.
+p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
+data = p.communicate()  # Get data from 'p terminal'.
+print(data)
+# Split IP text block into three, and divide the two containing IPs into words.
+ip_lines = data[0].splitlines()
+split_line_a = ip_lines[1].split()
+#split_line_b = ip_lines[2].split()
+
+# con_type variables for the message text. ex) 'ethernet', 'wifi', etc.
+ip_type_a = connect_type(split_line_a)
+#ip_type_b = connect_type(split_line_b)
+
+"""Because the text 'src' is always followed by an ip address,
+we can use the 'index' function to find 'src' and add one to
+get the index position of our ip.
+"""
+ipaddr_a = split_line_a[split_line_a.index('src')+1]
+#ipaddr_b = split_line_b[split_line_b.index('src')+1]
+
+# Creates a sentence for each ip address.
+my_ip_a = 'The %s IP for your RaspberryPi is %s' % (ip_type_a, ipaddr_a)
+#my_ip_b = 'Your %s ip is %s' % (ip_type_b, ipaddr_b)
+
+# Creates the text, subject, 'from', and 'to' of the message.
+#msg = MIMEText(my_ip_a + "\n" + my_ip_b)
+msg = MIMEText(my_ip_a)
+msg['Subject'] = 'IPs For RaspberryPi on %s' % today.strftime('%b %d %Y')
+msg['From'] = gmail_user
+msg['To'] = to
+# Sends the message
+smtpserver.sendmail(gmail_user, [to], msg.as_string())
+# Closes the smtp server.
+smtpserver.quit()
+
+
+
+-Note that you need to insert your UMD email and password on lines 28-30.
+
+-Save this file as 'startup_mailer.py' in the Code folder.
+
+-This script needs to be executable so now enter:
+
+	sudo chmod +x startup_mailer.py
+
+
+-Next, you need to alter one other file so that this script runs during the boot sequence:
+
+	sudo nano /etc/rc.local
+
+-Add the 'python /home/pi/Code/startup_mailer.py' line, so the file now looks like this:
+
+ # rc.local
+ #
+ # This script is executed at the end of each multiuser runlevel.
+ # Make sure that the script will "exit 0" on success or any other
+ # value on error.
+ #
+ # In order to enable or disable this script just change the execution
+ # bits.
+ #
+ # By default this script does nothing.
+ # Print the IP address if it doesn't work ad sleep 30 before all your code 
+ _IP=$(hostname -I) || true
+ if [ "$_IP" ]; then
+   printf "My IP address is %s\n" "$_IP"
+   python /home/pi/Code/startup_mailer.py
+ fi
+ exit 0
+
+
+-Save and exit out of nano.
+
+-You are now ready to shutdown and move this operation over to 'eduroam'
+
+	sudo shutdown now
+
+-You can shutdown Hedy by just pushing the big red button.
+
+-Once the RPi has shutdown, pop out the SD card, stick it in your Laptop and create two new 
+text files just like you did before:
+
+	-ssh  (add a new text doc; change the name to "ssh" with no file extension
+	-wpa_supplicant.conf  (don't forget to change the extension to .conf)
+
+
+-Here are the contents for the 'wpa_supplicant.conf' file that should get you onto 'eduroam'
+
+
+country=US
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+network={
+	ssid="eduroam"
+	key_mgmt=WPA-EAP
+	eap=PEAP
+	identity="sshanks@d.umn.edu"
+	password="MyVeryStrongPassword6"
+}
+
+
+-Save and eject the SD card, and back into the RPi it goes. Boot the RPi, and cross your 
+fingers!!!
+
+-If all goes well, you should receive an email with the IP address of the RPi on 'eduroam'
+
+-Make sure that your laptop is talking to 'eduroam' and now using Putty/Terminal, you should 
+be able to SSH into your RPi using 'pi@IPAddress'
+
+
+MAY THE ODDS BE EVER IN YOUR FAVOR...
+
+
+
+
+
+
