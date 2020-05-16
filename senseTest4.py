@@ -4,7 +4,7 @@ import pigpio
 
 pi = pigpio.pi('10.3.141.1')
 mux = pi.i2c_open(1, 0x70)
-
+print("I started!")
 # This processes the data and reports it to the screen
 def processData(r,g,b,c):
     print('r=' + str(r) + '; g=' + str(g) + '; b=' + str(b) + '; c=' + str(c))
@@ -51,6 +51,7 @@ tcs3 = Adafruit_TCS34725.TCS34725()
 
 # MAIN PROGRAM
 for i in range(1,1002):
+    print(i)
     pi.i2c_write_byte(mux, sensor_1)
     r1, g1, b1, c1 = tcs1.get_raw_data()
     processData(r1,g1,b1,c1)
