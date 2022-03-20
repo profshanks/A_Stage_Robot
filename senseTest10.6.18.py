@@ -8,7 +8,7 @@ except:
 import Adafruit_TCS34725_pigpio as Adafruit_TCS34725
 #import pigpio
 
-pi = pigpio.pi('10.3.141.1')
+pi = pigpio.pi('10.3.141.163')
 mux = pi.i2c_open(1, 0x77)
 print('Mux: ' + str(mux))
 

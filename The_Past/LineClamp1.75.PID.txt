@@ -1,54 +1,63 @@
 #########################
 #                       #
-#    Line Clamp 2.0     #
+#    Line Clamp 1.7     #
 #      profshanks       #
 #  Started: 08.04.2018  #
-#  This Version: 10/30  #
+#  This Version: 11/12  #
 #  Useful:              #
 #                       #
 #########################
-# Useless comment
 
 import time
-import sys
 from time import sleep
+import sys
+import struct
+
 import pigpio
-import readTCS34725 as TCS
-print('Done importing!')
+
+start8 = time.time()
 
 
 #################
 # System Set-Up #
 #################
-start8 = time.time()
-pi = pigpio.pi('10.3.141.163')    # Define remote RPi
-mux = pi.i2c_open(1, 0x77)      # Define multiplexer (Adafruit TCA9548A)
+
+# Sensor Variables
+COMMAND = 0x80
+ATIME = 0x01
+ITIME = 0xFF
+GAIN = 0x01
+CONTROL = 0x0F
+ENABLE = 0x00
+ENABLE_AEN = 0x02
+ENABLE_PON = 0x01
+
+#sensorList = [4, 8, 16, 32]
+sensorList = [4, 8, 16 ,32]
+colorRegisters = [0x16, 0x18, 0x1A, 0x14]
+
+# Set up PIGPIO connection & multiplexer
+pi = pigpio.pi('10.3.141.1')
+mux = pi.i2c_open(1, 0x77)
 print('Mux: ' + str(mux))
 
-# Set the multiplexer channels for the different sensors. 
-    # For channel 0 use "1"         # For channel 4 use "16"
-    # For channel 1 use "2"         # For channel 5 use "32"
-    # For channel 2 use "4"         # For channel 6 use "64"
-    # For channel 3 use "8"         # For channel 7 use "128"
+# This gets the sensors rolling...
+for sen in sensorList:
+    pi.i2c_write_byte(mux, sen)
+    sensor= pi.i2c_open(1, 0x29)
 
-sensor_1 = 4 
-sensor_2 = 8
-sensor_3 = 16
-sensor_4 = 32
+    # Set Integration Time
+    pi.i2c_write_byte_data(sensor, (COMMAND | ATIME), ITIME)
 
-# Create separate objects for each sensor.
-pi.i2c_write_byte(mux, sensor_1)
-tcs1 = TCS.TCS34725()
+    # Set Gain
+    pi.i2c_write_byte_data(sensor, (COMMAND | CONTROL), GAIN)
 
-pi.i2c_write_byte(mux, sensor_2)
-tcs2 = TCS.TCS34725()
+    # Enable sensor
+    pi.i2c_write_byte_data(sensor, (COMMAND | ENABLE), ENABLE_PON)
+    time.sleep(0.01)
+    pi.i2c_write_byte_data(sensor, (COMMAND | ENABLE), (ENABLE_PON | ENABLE_AEN))
 
-pi.i2c_write_byte(mux, sensor_3)
-tcs3 = TCS.TCS34725()
-
-pi.i2c_write_byte(mux, sensor_4)
-tcs4 = TCS.TCS34725()
-
+# Set up variables for Motor Driver Hat
 M2Sp = 13		        # Set pwm2 pin on MD10-Hat
 M1Sp = 12			# Set pwm1 pin on MD10-hat
 M2Dir = 24			# Set dir2 pin on MD10-Hat
@@ -63,6 +72,27 @@ Max = 255                       # Set maximum motor speed
 # Functions #
 #############
 
+def getSensorData():
+    """ Pulls sensor data from the registers on the chip.
+
+        Returns a list ('data') with readings for r/g/b/c on all
+                three sensors.
+
+        data[0] = r1    data[4] = r2    data[8] = r3    data[12] = r4
+        data[1] = g1    data[5] = g2    data[9] = g3    data[13] = g4
+        data[2] = b1    data[6] = b2    data[10] = b3   data[14] = b4
+        data[3] = c1    data[7] = c2    data[11] = c3   data[15] = c4
+        """
+    data = []
+    for s in sensorList:
+        pi.i2c_write_byte(mux, s)
+        for reg in colorRegisters:
+            (c, d) = pi.i2c_read_i2c_block_data(sensor,
+                                                (COMMAND | reg), 2)
+            #print(c, d)
+            neat = struct.unpack('H'*1, d)
+            data.append(neat[0])
+    return data
 '''
 def calibrateSensors(color='clear'):
     """ Calibrates sensors by running the sensor array back and forth
@@ -164,12 +194,12 @@ def calibrateSensors(color='clear'):
             print("Calibration sequence failed. Line center not found. Program ending... :(")
             sys.exit()
 '''
+
 def driveForward(hiVals, loVals, topSpeed, color='clear'):
     """ Drive forward while "clamped" to the tape line. Runs until stop
         signal is encountered.
         """
     iSawRed = False
-    elapsed = 0
     eTotal = 0
     pi.write(M1Dir, 1)
     pi.write(M2Dir, 1)
@@ -181,93 +211,111 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
         c = 2
     else:
         c = 3
-    variance = 5
-    #variance = loVals[c] - loVals[c+8]
-    kp = topSpeed * .5
+        
+    kp = .2
     ki = 0
     kd = 0
-    sumOfErr = 0
-    lastErr = 0
+    integral = 0
+    derivative = 0
+    lastError = 0
     start = time.time()
-    data = TCS.getSensorData(pi, tcs1, tcs2, tcs3, tcs4, mux,
-                  sensor_1, sensor_2, sensor_3, sensor_4)
+    data = getSensorData()
     end = time.time()
     elapsed = round((end-start), 5)
     print('That function took ' + str(elapsed) + ' seconds!')
-    #print(data)
-    eTotal += elapsed
+    eTotal = elapsed
     print(data[c+12], data[c+8], data[c+4], data[c])
     total = (data[c] + data[c+4] + data[c+8] + data[c+12])
     i = 1
-       
+    elapsed = 0
+    
     while ((data[0] < (data[1]*2.5)) & (data[4] < (data[5]*2.5)) &
            (data[8] < (data[9]*2.5)) & (data[12] < (data[13]*2.5))):
-    #while i <100:
-        #print(data[c+12], data[c+8], data[c+4], data[c])
         iSawRed = False
         if total < 250:
-            pi.set_PWM_dutycycle(M1Sp, 0)
-            pi.set_PWM_dutycycle(M2Sp, 0)
             print('I am lost...')
             print(data[c+12], data[c+8], data[c+4], data[c])
             break
-        elif data[c] > (hiVals * .75): # Too far right; make a hard left!
-            print('Hard left!')
+        elif data[c] > (data[c+4]*2): # Too far left; make a hard right!
+            print('Hard right!')
+            integral = 0
             print(data[c+12], data[c+8], data[c+4], data[c])
             #print(i)
-            while data[c+4] < (hiVals * .6):
+            while data[c+4] < (hiVals * .8):
                 pi.set_PWM_dutycycle(M2Sp, 0)
-                pi.set_PWM_dutycycle(M1Sp, (topSpeed*.60))
+                pi.set_PWM_dutycycle(M1Sp, (topSpeed * .65))
                 start = time.time()
-                data = TCS.getSensorData(pi, tcs1, tcs2, tcs3, tcs4, mux,
-                  sensor_1, sensor_2, sensor_3, sensor_4)
+                data = getSensorData()
                 end = time.time()
                 elapsed = round((end-start), 5)
                 eTotal += elapsed
                 print('That function took ' + str(elapsed) + ' seconds!')
+                print(data[c+12], data[c+8], data[c+4], data[c])
+                total = (data[c] + data[c+4] + data[c+8] + data[c+12])
+                if total < 250:
+                    print('I am lost...')
+                    print(data[c+12], data[c+8], data[c+4], data[c])
+                    break
                 i += 1
             #print(i)
-        elif data[c+12] > hiVals: # Too far left; make a hard right!
-            print('Hard right!')
+        elif data[c+12] > (data[c+8]*2): # Too far right; make a hard left!
+            print('Hard left!')
+            integral = 0
             print(data[c+12], data[c+8], data[c+4], data[c])
             #print(i)
-            while data[c+8] < hiVals:
-                pi.set_PWM_dutycycle(M2Sp, (topSpeed*.6))
+            while data[c+8] < (hiVals * .8):
+                pi.set_PWM_dutycycle(M2Sp, (topSpeed * .65))
                 pi.set_PWM_dutycycle(M1Sp, 0)
                 start = time.time()
-                data = TCS.getSensorData(pi, tcs1, tcs2, tcs3, tcs4, mux,
-                  sensor_1, sensor_2, sensor_3, sensor_4)
+                data = getSensorData()
                 end = time.time()
                 elapsed = round((end-start), 5)
                 eTotal += elapsed
                 print('That function took ' + str(elapsed) + ' seconds!')
+                print(data[c+12], data[c+8], data[c+4], data[c])
+                total = (data[c] + data[c+4] + data[c+8] + data[c+12])
+                if total < 250:
+                    print('I am lost...')
+                    print(data[c+12], data[c+8], data[c+4], data[c])
+                    break
                 i += 1
             #print(i)
         else:
-            error = data[c+4] - data[c+8]
-            #print('Error: ' + str(error))
-            proportion = abs(error/hiVals) * kp
-            #print('Proportion: ' + str(proportion))
-            turn = topSpeed-proportion
-            #print('Turn: ' + str(turn))
-          
-            if error > 0: # A little too far right; proportional turn left
-                #print('Left...')
-                pi.set_PWM_dutycycle(M2Sp, (topSpeed-proportion))
+            print(data[c+12], data[c+8], data[c+4], data[c])
+            #error = ((3*data[c+12]) + data[c+8]) - (data[c+4] + (3*data[c]))
+            error = data[c] - data[c+8]
+            proportional = error
+            derivative = error - lastError
+            correction = abs(kp*proportional + ki*integral + kd*derivative)
+            turn = topSpeed - correction
+            if turn < 0:
+                turn = 0
+                
+            print('Correction: ' + str(round((correction), 0)) +
+                  ' / E: ' + str(error) +
+                  ' / P: ' + str(round((proportional*kp), 0)) +
+                  ' / I: ' + str(round((integral*ki), 0)) +
+                  ' / D: ' + str(round((derivative*kd), 0)) +
+                  ' / T: ' + str(round((turn),0)))
+            
+            integral += error
+            lastError = error
+            
+            if error > 0: # A little too far right; PID turn left
+                print('Left...')
+                pi.set_PWM_dutycycle(M2Sp, turn)
                 pi.set_PWM_dutycycle(M1Sp, topSpeed)
-            else: # A little too far left; proportional turn right
-                #print('Right...')
+            else: # A little too far left; PID turn right
+                print('Right...')
                 pi.set_PWM_dutycycle(M2Sp, topSpeed)
-                pi.set_PWM_dutycycle(M1Sp, (topSpeed-proportion))
-                
-                
+                pi.set_PWM_dutycycle(M1Sp, turn)
+            
         start = time.time()
-        data = TCS.getSensorData(pi, tcs1, tcs2, tcs3, tcs4, mux,
-                  sensor_1, sensor_2, sensor_3, sensor_4)
+        data = getSensorData()
         end = time.time()
         elapsed = round((end-start), 5)
         eTotal += elapsed
-        print('That function took ' + str(elapsed) + ' seconds!')
+        #print('That function took ' + str(elapsed) + ' seconds!')
         
         total = (data[c] + data[c+4] + data[c+8] + data[c+12])
         #print(total)
@@ -284,47 +332,25 @@ def driveForward(hiVals, loVals, topSpeed, color='clear'):
     eAverage = round((eTotal/i), 5)
     print('The average time to read the sensors was ' + str(eAverage) + ' seconds.')
     
-    return eTotal                 
-    '''
-    while data[4] < (data[6]*1.5): # Looking out for red tape signal
-        # Calculate centering error & turn correction via PID method.
-        
-        error = abs(data[c] - data[c+8])
-        proportional = error * kp
-        integral = sumOfErr * ki
-        differential = lastErr * kd
-        pid = int(proportional + differential)              # Just PD control
-        #pid = int(proportional + integral + differential)   # Full PID
-        sumOfErr += error
-        error = lastErr
-        turn = topSpeed - pid
-        if turn <= 0:
-            turn = 0
-
-        # Make speed adjustments.
-        if data[c] > data[c+8]: # Need to adjust left.
-            pi.set_PWM_dutycycle(M1Sp, topSpeed)
-            pi.set_PWM_dutycycle(M2Sp, turn)
-        else:
-            pi.set_PWM_dutycycle(M1Sp, turn)
-            pi.set_PWM_dutycycle(M2Sp, topSpeed)
-            
-        data = getSensorData()
-    '''
-    
+    return eTotal               
 
     
 ################
 # MAIN PROGRAM #
 ################
 
-topSpeed = 100  # Speed values range from 0-255.
+topSpeed = 150  # Speed values range from 0-255.
+hiV = 300
 col = 'clear'   # Color options include 'red'/'green'/'blue'/'clear'.
+c = 3
 
 #(hiV,loV,tests) = calibrateSensors(color=col)
 #print(tests)
 #driveForward(hiV,loV,topSpeed,color=col)
-eTotal = driveForward(180, 60, 150)
+eTotal = driveForward(hiV, 60, topSpeed)
+
+data = getSensorData()
+print(data[c], data[c+4], data[c+8], data[c+12])
 
 
 
@@ -333,27 +359,18 @@ eTotal = driveForward(180, 60, 150)
 ###################
 
 # Put the sensor chips back to low power sleep/disabled.
-pi.i2c_write_byte(mux, sensor_1)
-tcs1.disable()
-pi.i2c_close(tcs1._device)
+for sen in sensorList:
+    pi.i2c_write_byte(mux, sen)
+    pi.i2c_close(sensor)
+    sensor -=1
 
-pi.i2c_write_byte(mux, sensor_2)
-tcs2.disable()
-pi.i2c_close(tcs2._device)
-
-pi.i2c_write_byte(mux, sensor_3)
-tcs3.disable()
-pi.i2c_close(tcs3._device)
-
-pi.i2c_write_byte(mux, sensor_4)
-tcs4.disable()
-pi.i2c_close(tcs4._device)
+#tcs4.disable()
 
 pi.i2c_close(mux)
-
+'''
 end8 = time.time()
 elapsed8 = round((end8-start8), 1)
 sensorTime = round(((eTotal/elapsed8)*100), 1)
 print('That run took ' + str(elapsed8) + ' seconds!')
 print(str(sensorTime) + '% of that time was spent reading the sensors.')
-
+'''

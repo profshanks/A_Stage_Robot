@@ -1,14 +1,14 @@
 import pigpio
 from time import sleep
 
-pi2 = pigpio.pi('10.3.141.1')
+pi2 = pigpio.pi('10.3.141.249')
 
 M2Sp = 13				# set pwm2 pin on MD10-Hat
 M1Sp = 12				# set pwm1 pin on MD10-hat
 M2Dir = 24				# set dir2 pin on MD10-Hat
 M1Dir = 26				# set dir1 pin on MD10-Hat
 
-topSpeed = 100                               # set maximum motor speed
+topSpeed = 255                              # set maximum motor speed
 
 pi2.write(M1Dir, 0)
 pi2.write(M2Dir, 0)

@@ -1,22 +1,32 @@
 import pigpio
 from time import sleep
 
-pi2 = pigpio.pi('10.3.141.163')
+pi2 = pigpio.pi('10.3.141.249')
 
 M2Sp = 13				# set pwm2 pin on MD10-Hat
 M1Sp = 12				# set pwm1 pin on MD10-hat
 M2Dir = 24				# set dir2 pin on MD10-Hat
 M1Dir = 26				# set dir1 pin on MD10-Hat
 
-Max = 250                               # set maximum motor speed
+pwm = 255                               # set maximum motor speed
 
 pi2.write(M1Dir, 0)
 pi2.write(M2Dir, 0)
 
-print("Whoa!!!")
+pi2.set_PWM_dutycycle(M1Sp, pwm)
+pi2.set_PWM_dutycycle(M2Sp, pwm)
+
+sleep(2.0)
+
+pi2.set_PWM_dutycycle(M1Sp, pwm)
+#pi2.write(M2Dir, 1)
+pi2.set_PWM_dutycycle(M2Sp, pwm * .5)
+
+sleep(2.0)
+
+print("Stop")
 pi2.set_PWM_dutycycle(M1Sp, 0)
 pi2.set_PWM_dutycycle(M2Sp, 0)
-sleep(0.01)
 
 print("All Done!!")
 '''
