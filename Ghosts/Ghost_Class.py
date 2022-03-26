@@ -2,22 +2,6 @@ from math import sin, cos, radians
 import pigpio
 from cardinalDirections import *
 
-cardinalConversion = {'North': 0,
-                      'NNE': 22.5,
-                      'NE': 45,
-                      'ENE': 67.5,
-                      'East': 90,
-                      'ESE': 112.5,
-                      'SE': 135,
-                      'SSE': 157.5,
-                      'South': 180,
-                      'SSW': 202.5,
-                      'SW': 225,
-                      'WSW': 247.5,
-                      'West': 270,
-                      'WNW': 292.5,
-                      'NW': 315,
-                      'NNW': 337.5}
 
 class Ghost:
     """
@@ -26,12 +10,23 @@ class Ghost:
 
     Drive instructions headed to Sabertooth Motor Drivers are using
     Simplified Serial instructions (see Sabertooth documentation)
+
+    Methods include:
+
+    stop()
+    drive(direction, speed)
+    spin(direction, speed)
+    closeSerial()
     """
 
     def __init__(self, address): 
         self.pi = pigpio.pi(address)
+        #self.sbt1 = self.pi.serial_open("/dev/ttyAMA0", 9600)
         self.sbt1 = self.pi.serial_open("/dev/ttyAMA1", 9600)
-        self.sbt2 = self.pi.serial_open("/dev/serial0", 9600)
+        self.sbt2 = self.pi.serial_open("/dev/ttyS0", 9600)
+        #self.sbt1 = self.pi.serial_open("/dev/ttyAMA3", 9600)
+        #self.sbt1 = self.pi.serial_open("/dev/serial1", 9600)
+        #self.sbt2 = self.pi.serial_open("/dev/serial0", 9600)
         
     def stop(self):
         self.pi.serial_write_byte(self.sbt1, 0)
