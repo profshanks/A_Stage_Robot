@@ -149,7 +149,7 @@ class TCS34725(object):
     """TCS34725 color sensor. Code modified to run remotely using pigpio"""
     
 
-    def __init__(self, integration_time=TCS34725_INTEGRATIONTIME_2_4MS,
+    def __init__(self, ip_Address, integration_time=TCS34725_INTEGRATIONTIME_2_4MS,
                  gain=TCS34725_GAIN_4X, address=TCS34725_ADDRESS, i2c=None, **kwargs):
         """Initialize the TCS34725 sensor."""
         '''
@@ -159,7 +159,7 @@ class TCS34725(object):
             i2c = I2C
         self._device = i2c.get_i2c_device(address, **kwargs)
         '''
-        self.pi2 = pigpio.pi('10.3.141.1') # _pigpio
+        self.pi2 = pigpio.pi(ip_Address) # _pigpio
         self._device = self.pi2.i2c_open(1,0x29) # _pigpio
         
         # Make sure we're connected to the sensor.
