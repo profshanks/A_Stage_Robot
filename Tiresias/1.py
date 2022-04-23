@@ -19,25 +19,29 @@ ip_Address = '10.3.141.139'
 pi = pigpio.pi(ip_Address) # Sets up RPi as pigpio object
 
 sensor1 = MLX90393.MLX90393(pi, address=0x0C,
-                            gain=MLX90393.GAIN_5X,
+                            gain=MLX90393.GAIN_3X,
                             debug=False)
 sensor2 = MLX90393.MLX90393(pi, address=0x0D,
-                            gain=MLX90393.GAIN_5X,
+                            gain=MLX90393.GAIN_3X,
                             debug=False)
 
 def grab_x_data():
-    '''This function grabs the x data from both sensors'''
+    '''This function grabs the y data from both sensors'''
     M1X, M1Y, M1Z = sensor1.magnetic
     M2X, M2Y, M2Z = sensor2.magnetic
     M1X = abs(round(M1X, 1))
+    if M1X > 30:
+        M1X = 30
     M2X = abs(round(M2X, 1))
+    if M2X > 10:
+        M2X = 10
     this_data = (M1X, M2X)
     data_log.append(this_data)
     print(this_data)
     return this_data
 
 def grab_z_data():
-    '''This function grabs the z data from both sensors'''
+    '''This function grabs the y data from both sensors'''
     M1X, M1Y, M1Z = sensor1.magnetic
     M2X, M2Y, M2Z = sensor2.magnetic
     M1Z = abs(round(M1Z, 1))
@@ -64,8 +68,7 @@ def grab_y_data():
 
 speed = 25        # maximum motor speed
 cut = 1
-threshold = -500 #best threshold to monitor is Z(outputs only negative values) as x,y both output negative and positive values
-#values outside of threshold are postive(directly on the threshold negative)
+threshold = 30
 ko = .2
 clim = .5
 i = 0
@@ -79,60 +82,60 @@ calibration_run = False
 spinRight(pi, speed)
 
 while True: #Turn left until sensor 2 reads high
-    this_data = grab_z_data()
-    if this_data[0] > threshold:
+    this_data = grab_y_data()
+    if this_data[0] < threshold:
         s1_high = True
     if s1_high == True:
         print('SWITCH')
-        for i in range(2):
-            this_data = grab_z_data()
+        for i in range(5):
+            this_data = grab_y_data()
         break
 
 spinLeft(pi, speed)
 
 while True: #Turn right until sensor 1 reads high
-    this_data = grab_z_data()
-    if this_data[1] > threshold:
+    this_data = grab_y_data()
+    if this_data[1] < threshold:
         s2_high = True
     if s2_high == True:
         print('SWITCH')
-        for i in range(2):
-            this_data = grab_z_data()
+        for i in range(3):
+            this_data = grab_y_data()
         break
 
 spinRight(pi, speed)
 
 while True: #Turn left until sensor 2 reads high
-    this_data = grab_z_data()
-    if this_data[0] > threshold:
+    this_data = grab_y_data()
+    if this_data[0] < threshold:
         s1_high = True
     if s1_high == True:
         print('SWITCH')
-        for i in range(2):
-            this_data = grab_z_data()
+        for i in range(5):
+            this_data = grab_y_data()
         break
 
 spinLeft(pi, speed)
 
 while True: #Turn right until sensor 1 reads high
-    this_data = grab_z_data()
-    if this_data[1] > threshold:
+    this_data = grab_y_data()
+    if this_data[1] < threshold:
         s2_high = True
     if s2_high == True:
         print('SWITCH')
-        for i in range(2):
-            this_data = grab_z_data()
+        for i in range(3):
+            this_data = grab_y_data()
         break
 
 spinRight(pi, speed)
 
 while True: #Turn left until sensor 2 reads high
-    this_data = grab_z_data()
-    if this_data[0] > threshold:
+    this_data = grab_y_data()
+    if this_data[0] < threshold:
         s1_high = True
     if s1_high == True:
-        for i in range(2):
-            this_data = grab_z_data()
+        for i in range(5):
+            this_data = grab_y_data()
         break 
 
 stop(pi)
