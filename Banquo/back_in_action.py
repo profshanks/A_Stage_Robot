@@ -1,8 +1,26 @@
 import pigpio
-import GhostFunctions as GF
+from ControlFunctions import *
 from time import sleep
 
 pi = pigpio.pi('10.3.141.67')
+
+
+drive(E, 50)
+sleep(2)
+
+stop()
+
+
+
+
+
+
+
+pi.serial_close(sbt1)
+pi.serial_close(sbt2)
+
+
+'''
 
 M1pwm = 12   # RPi pin cotrolling PWM for Motor 1 (orange wire)
 M2pwm = 18   # RPi pin cotrolling PWM for Motor 2 (yellow wire)
@@ -17,7 +35,7 @@ print(stop)
 print("Stop")
 GF.drive4motors(pi, stop)
 
-sleep(3.0)
+sleep(1.0)
 
 print("Accellerate")
 for step in range(speed):
@@ -53,5 +71,5 @@ print("Stop")
 GF.drive4motors(pi, stop)
 
 sleep(3.0)
-
+'''
 print("All Done!!")

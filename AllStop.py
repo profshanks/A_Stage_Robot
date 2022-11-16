@@ -1,7 +1,7 @@
 import pigpio
 from time import sleep
 
-pi2 = pigpio.pi('10.3.141.163')
+pi2 = pigpio.pi('10.3.141.139')
 
 M2Sp = 13				# set pwm2 pin on MD10-Hat
 M1Sp = 12				# set pwm1 pin on MD10-hat

@@ -7,7 +7,7 @@ from time import sleep
 import sys
 
 #import Terry_Support_Functions as TSF
-#from Terry_Drive_Functions import *
+from Terry_Drive_Functions import *
 import adafruit_MLX90393_pigpio as MLX90393
 
 
@@ -27,7 +27,7 @@ sensor1 = MLX90393.MLX90393(pi, address=0x0C,
 sensor2 = MLX90393.MLX90393(pi, address=0x0D,
                             gain=MLX90393.GAIN_1X,
                             debug=False)
-
+'''
 while True:
     M1X, M1Y, M1Z = sensor1.magnetic
     M1X = round(M1X, 1)
@@ -58,7 +58,7 @@ while True:
     print()
     print()
     time.sleep(3.0)
-
+'''
 
 '''
 r1,g1,b1,c1,r2,g2,b2,c2 = TSF.getSensorData(pi, mux, sensorList, sensor)
@@ -75,6 +75,16 @@ threshold = 70
 ko = .2
 clim = .5
 i = 0
+
+forward = 0
+reverse = 1
+
+drive(pi, 50, forward)
+sleep(2)
+drive(pi, 50, reverse)
+sleep(2)
+stop(pi)
+
 '''
 spinRight(pi, 50)
 sleep(2)

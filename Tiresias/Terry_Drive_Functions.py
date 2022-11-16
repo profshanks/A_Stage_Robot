@@ -18,6 +18,12 @@ kP = 1
 kI = 1
 kD = 1
 
+def drive(pi, speed, direction):
+    pi.write(M1Dir, direction)
+    pi.set_PWM_dutycycle(M1Sp, speed)
+    pi.write(M2Dir, direction)
+    pi.set_PWM_dutycycle(M2Sp, speed)
+
 def stop(pi):
     pi.set_PWM_dutycycle(M1Sp, 0)
     pi.set_PWM_dutycycle(M2Sp, 0)
