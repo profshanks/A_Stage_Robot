@@ -52,6 +52,8 @@ class decoder:
 
       self.levA = 0
       self.levB = 0
+      self.tick = 0
+      self.pulses = 0
 
       self.lastGpio = None
 
@@ -61,8 +63,8 @@ class decoder:
       self.pi.set_pull_up_down(gpioA, pigpio.PUD_UP)
       self.pi.set_pull_up_down(gpioB, pigpio.PUD_UP)
 
-      self.cbA = self.pi.callback(gpioA, pigpio.EITHER_EDGE, self._pulse)
-      self.cbB = self.pi.callback(gpioB, pigpio.EITHER_EDGE, self._pulse)
+      self.cbA = self.pi.callback(gpioA, pigpio.RISING_EDGE, self._pulse)
+      self.cbB = self.pi.callback(gpioB, pigpio.RISING_EDGE, self._pulse)
 
    def _pulse(self, gpio, level, tick):
 
@@ -81,7 +83,6 @@ class decoder:
              |         |         |         |
          ----+         +---------+         +---------+  1
       """
-
       if gpio == self.gpioA:
          self.levA = level
       else:
@@ -92,10 +93,16 @@ class decoder:
 
          if   gpio == self.gpioA and level == 1:
             if self.levB == 1:
-               self.callback(1)
+               self.tick += 1
+               self.incrementPulses(1)
          elif gpio == self.gpioB and level == 1:
             if self.levA == 1:
-               self.callback(-1)
+               self.tick += 1
+               self.incrementPulses(-1)
+               
+   def incrementPulses(self, way):
+      if (way == -1):
+         self.pulses += abs(way)
 
    def cancel(self):
 
@@ -106,6 +113,8 @@ class decoder:
       self.cbA.cancel()
       self.cbB.cancel()
 
+
+"""
 if __name__ == "__main__":
 
    import time
@@ -132,3 +141,4 @@ if __name__ == "__main__":
    decoder.cancel()
 
    pi.stop()
+"""
