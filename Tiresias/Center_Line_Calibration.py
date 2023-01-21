@@ -4,6 +4,7 @@ import pigpio
 
 import time
 from time import sleep
+from time import time
 import sys
 
 #import Terry_Support_Functions as TSF
@@ -33,12 +34,14 @@ def grab_y_data():
     M2Y = round(M2Y, 1)
     this_data = (M1Y, M2Y)
     data_log.append(this_data)
-    print(this_data)
+    #print(this_data)
     return this_data
 
 ################
 # MAIN PROGRAM #
 ################
+
+start_time = time()
 
 speed = 25        # maximum motor speed
 cut = 1
@@ -54,19 +57,23 @@ s2_high = False
 calibration_run = False
 
 spinRight(pi, speed)
+times = []
 
 while True: #Turn left until sensor 2 reads high
+    t = time()
     this_data = grab_y_data()
     if this_data[0] < threshold:
         s1_high = True
     if s1_high == True:
-        print('SWITCH')
+        #print('SWITCH')
         for i in range(5):
             this_data = grab_y_data()
         break
+    elapsed = time() - t
+    times.append(elapsed)
 
 spinLeft(pi, speed)
-
+'''
 while True: #Turn right until sensor 1 reads high
     this_data = grab_y_data()
     if this_data[1] < threshold:
@@ -111,8 +118,11 @@ while True: #Turn left until sensor 2 reads high
         for i in range(5):
             this_data = grab_y_data()
         break 
-
+'''
 stop(pi)
+overall_time = time() - start_time
+print(f'Total Time: {overall_time}')
+print(f'Time log: {times}')
 
 print()
 print(len(data_log))
