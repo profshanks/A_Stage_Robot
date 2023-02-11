@@ -1,0 +1,17 @@
+Alex Bengtson
+1/21/23
+
+I started trying to set up the RCWL-1601 sensor
+
+I hooked up the black wire to grnd
+I hooked up the white wire to 5v power
+I hooked up the purple wire between Trig(output) and pin 25
+I hooked up the grey wire between Echo(input) and pin 24
+
+Here are some articles of notes that I was refrencing:
+https://www.woolseyworkshop.com/2020/05/01/interfacing-ultrasonic-distance-sensors-with-a-raspberry-pi/
+
+https://github.com/gpiozero/gpiozero/blob/f203f4abe0e11c5f82ef952370ddebca5a02bf0c/gpiozero/input_devices.py
+
+https://www.adafruit.com/product/4007
+
