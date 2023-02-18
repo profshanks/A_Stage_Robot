@@ -13,21 +13,21 @@ def callback(way):
   if (way == 1):
     pulses += abs(way)
 
-E_decoder = rotaryEncoder.decoder(pi, 24, 23, callback)
-print("pulses before: " + str(E_decoder.pulses))
-E_decoder.levA = 0
-E_decoder.levB = 0
-E_decoder.tick = 0
+N_decoder = rotaryEncoder.decoder(pi, 17, 27, callback)
+print("pulses before: " + str(N_decoder.pulses))
+N_decoder.levA = 0
+N_decoder.levB = 0
+N_decoder.tick = 0
 #lowest speed 10
 #revs are 12 maybe ~13
-eastMotor(N,30)
+northMotor(W,30)
 sleep(4)
 stop()
-revs = E_decoder.pulses/189
-print("pulses after: " + str(E_decoder.pulses))
-print("East revs are: " + str(revs))
+revs = N_decoder.pulses/189
+print("pulses after: " + str(N_decoder.pulses))
+print("North revs are: " + str(revs))
 
-E_decoder.cancel()
+N_decoder.cancel()
 
 #close 
 pi.serial_close(sbt1)
