@@ -1,13 +1,14 @@
 import pigpio
 from time import sleep
 import rotaryEncoder
-from SetupImports import *
+#from SetupImports import 
 from DirectionVariables import *
-from ControlFunctions import *
+import ControlFunctions as cf
 
 #i want to run the motor at the lowest and highest speed at 60 seconds to
 #see how many revs i get
 
+bq = cf.Banquo('10.3.141.67')
 #pi = pigpio.pi('10.3.141.67')
 #sbt1 = pi.serial_open("/dev/ttyAMA1", 9600)
 #sbt2 = pi.serial_open("/dev/serial0", 9600)
@@ -21,10 +22,10 @@ def callback(way):
     pulses += abs(way)
 
     
-N_decoder = rotaryEncoder.decoder(pi, 17, 27, callback) # North Motor
-W_decoder = rotaryEncoder.decoder(pi, 11, 9, callback)  # West Motor
-S_decoder = rotaryEncoder.decoder(pi, 16, 20, callback) # South Motor
-E_decoder = rotaryEncoder.decoder(pi, 24, 23, callback) # East Motor
+N_decoder = rotaryEncoder.decoder(bq.pi, 17, 27, callback) # North Motor
+W_decoder = rotaryEncoder.decoder(bq.pi, 11, 9, callback)  # West Motor
+S_decoder = rotaryEncoder.decoder(bq.pi, 16, 20, callback) # South Motor
+E_decoder = rotaryEncoder.decoder(bq.pi, 24, 23, callback) # East Motor
 
 print("pulses before: " + str(W_decoder.pulses))
 W_decoder.levA = 0
@@ -45,20 +46,21 @@ def run_for_revs(motor, direction, speed, encoder, ppr, revs, wind_down):
             pulses_to_go = pulse_goal - encoder.pulses
             pct_wind_down_remaining = pulses_to_go/wd_pulses
             cut_speed = speed - ((1 - pct_wind_down_remaining) * cut_able_speed)
-            westMotor(S, cut_speed)
+            motor(S, cut_speed)
 
-    stop()
+    bq.stop()
     revs = W_decoder.pulses/pulses_per_rev
     print("pulses after: " + str(W_decoder.pulses))
     print("West revs are: " + str(revs))
 
 pulses_per_rev = 188
-rev_goal = 50
+rev_goal = 10
 speed = 100
 
-run_for_revs(westMotor, S, 100, W_decoder, 188, 10, 3)
+run_for_revs(bq.westMotor, S, 100, W_decoder, 188, 10, 3)
 
 W_decoder.cancel()
+bq.close_serial()
 
 '''
 print("pulses before: " + str(E_decoder.pulses))
@@ -77,5 +79,5 @@ print("East revs are: " + str(revs))
 E_decoder.cancel()
 '''
 # close 
-pi.serial_close(sbt1)
-pi.serial_close(sbt2)
+#pi.serial_close(sbt1)
+#pi.serial_close(sbt2)
