@@ -41,23 +41,23 @@ def run_for_revs(motor, direction, speed, encoder, ppr, revs, wind_down):
     
     while encoder.pulses < pulse_goal:
         if encoder.pulses < (pulse_goal - wd_pulses):
-            motor(S, speed)                    
+            motor(direction, speed)                    
         else:
             pulses_to_go = pulse_goal - encoder.pulses
             pct_wind_down_remaining = pulses_to_go/wd_pulses
             cut_speed = speed - ((1 - pct_wind_down_remaining) * cut_able_speed)
-            motor(S, cut_speed)
+            motor(direction, cut_speed)
 
     bq.stop()
-    revs = W_decoder.pulses/pulses_per_rev
-    print("pulses after: " + str(W_decoder.pulses))
-    print("West revs are: " + str(revs))
+    revs = encoder.pulses/pulses_per_rev
+    print("pulses after: " + str(encoder.pulses))
+    print("revs are: " + str(revs))
 
 pulses_per_rev = 188
 rev_goal = 10
 speed = 100
 
-run_for_revs(bq.westMotor, S, 100, W_decoder, 188, 10, 3)
+run_for_revs(bq.southMotor, E, 100, S_decoder, 188, 10, 3)
 
 W_decoder.cancel()
 bq.close_serial()
