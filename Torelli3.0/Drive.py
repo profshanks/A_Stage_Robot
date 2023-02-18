@@ -4,7 +4,7 @@ from ControlFunctions import *
 
 
 t = .05
-mm = 30
+mm = 15
 for i in range(5,mm):
     j = i + 2
     if j > 100:
@@ -22,6 +22,6 @@ for i in range(0,mm):
         i = 0
     rightMotor(F,i)
     leftMotor(F,i)
-    sleep(.05)
+    sleep(t)
 stop()
 pi.serial_close(sbt1)
