@@ -1,16 +1,16 @@
 import pigpio
 from time import sleep
 import rotaryEncoder
-#from SetupImports import *
+from SetupImports import *
 from DirectionVariables import *
 from ControlFunctions import *
 
 #i want to run the motor at the lowest and highest speed at 60 seconds to
 #see how many revs i get
 
-pi = pigpio.pi('10.3.141.67')
-sbt1 = pi.serial_open("/dev/ttyAMA1", 9600)
-sbt2 = pi.serial_open("/dev/serial0", 9600)
+#pi = pigpio.pi('10.3.141.67')
+#sbt1 = pi.serial_open("/dev/ttyAMA1", 9600)
+#sbt2 = pi.serial_open("/dev/serial0", 9600)
 #revs = 0
 #global pulses
 #pulses = 0
@@ -45,7 +45,6 @@ def run_for_revs(motor, direction, speed, encoder, ppr, revs, wind_down):
             pulses_to_go = pulse_goal - encoder.pulses
             pct_wind_down_remaining = pulses_to_go/wd_pulses
             cut_speed = speed - ((1 - pct_wind_down_remaining) * cut_able_speed)
-            print(cut_speed)
             westMotor(S, cut_speed)
 
     stop()
