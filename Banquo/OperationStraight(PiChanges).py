@@ -21,19 +21,23 @@ def goStraight(motor1, motor2, direction, revs, speed, ppr, callback):
     pulses_rev = revs * ppr
     pulses_revhalf = (revs * ppr) / 2
     #E_decoder.pulses or (W_decoder.pulses or E_decoder.pulses)
-    while E_decoder.pulses < pulses_rev:
+##    while E_decoder.pulses < pulses_rev: original code
+    while W_decoder.pulses < pulses_rev:
+
       #when it reaches half of what the rev goal should be it should
       #start to slow down the speed
-        if (W_decoder.pulses or E_decoder.pulses) != pulses_revhalf:
-          if W_decoder.pulses > E_decoder.pulses:          
-            motor1(direction, speed * .9)
+##        if (W_decoder.pulses or E_decoder.pulses) != pulses_revhalf: original code
+##          if W_decoder.pulses > E_decoder.pulses:          original code
+        if (E_decoder.pulses or W_decoder.pulses) != pulses_revhalf:
+          if E_decoder.pulses > W_decoder.pulses:     
+            motor1(direction, speed * .9)#.9 
             motor2(direction, speed)
           else:
             motor1(direction, speed)
-            motor2(direction, speed * .9)
+            motor2(direction, speed * .9)#.9
         else:
-          motor1(direction, speed * .9)
-          motor2(direction, speed * .9)
+          motor1(direction, speed)#.9
+          motor2(direction, speed)#.9
           
 #    sleep(3)    
     bq.stop()
@@ -41,7 +45,7 @@ def goStraight(motor1, motor2, direction, revs, speed, ppr, callback):
     print("pulses2: " + str(E_decoder.pulses))
     print("What pulses should be: " + str(pulses_rev))
 #    print("What pulses2 should be: " + str(pulses_rev2))
-goStraight(bq.westMotor, bq.eastMotor, S, 5, 50, 189, callback)
+goStraight(bq.westMotor, bq.eastMotor, N, 2, 50, 189, callback)
 
 W_decoder.cancel()
 E_decoder.cancel()
